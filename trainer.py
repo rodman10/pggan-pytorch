@@ -128,7 +128,6 @@ class trainer:
                 self.flag_flush_gen = False
                 self.G.module.flush_network()   # flush G
                 print(self.G.module.model)
-                #self.Gs.module.flush_network()         # flush Gs
                 self.fadein['gen'] = None
                 self.complete['gen'] = 0.0
                 self.phase = 'dtrns'
@@ -147,12 +146,11 @@ class trainer:
             # grow network.
             if floor(self.resl) != prev_resl and floor(self.resl)<self.max_resl+1:
                 self.lr = self.lr * float(self.config.lr_decay)
-                self.G.grow_network(floor(self.resl))
-                #self.Gs.grow_network(floor(self.resl))
-                self.D.grow_network(floor(self.resl))
+                self.G.module.grow_network(floor(self.resl))
+                self.D.module.grow_network(floor(self.resl))
                 self.renew_everything()
-                self.fadein['gen'] = dict(self.G.model.named_children())['fadein_block']
-                self.fadein['dis'] = dict(self.D.model.named_children())['fadein_block']
+                self.fadein['gen'] = dict(self.G.module.model.named_children())['fadein_block']
+                self.fadein['dis'] = dict(self.D.module.model.named_children())['fadein_block']
                 self.flag_flush_gen = True
                 self.flag_flush_dis = True
 
