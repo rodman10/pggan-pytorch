@@ -32,9 +32,9 @@ class Flatten(nn.Module):
 
 
 
-class fadein_layer(nn.Module):
+class FadeInLayer(nn.Module):
     def __init__(self, config):
-        super(fadein_layer, self).__init__()
+        super(FadeInLayer, self).__init__()
         self.alpha = 0.0
 
     def update_alpha(self, delta):
@@ -48,9 +48,9 @@ class fadein_layer(nn.Module):
 
 
 # https://github.com/github-pengge/PyTorch-progressive_growing_of_gans/blob/master/models/base_model.py
-class minibatch_std_concat_layer(nn.Module):
+class MinibatchStdConcatLayer(nn.Module):
     def __init__(self, averaging='all'):
-        super(minibatch_std_concat_layer, self).__init__()
+        super(MinibatchStdConcatLayer, self).__init__()
         self.averaging = averaging.lower()
         if 'group' in self.averaging:
             self.n = int(self.averaging[5:])
@@ -87,9 +87,9 @@ class minibatch_std_concat_layer(nn.Module):
         return self.__class__.__name__ + '(averaging = %s)' % (self.averaging)
 
 
-class pixelwise_norm_layer(nn.Module):
+class PixelwiseNormLayer(nn.Module):
     def __init__(self):
-        super(pixelwise_norm_layer, self).__init__()
+        super(PixelwiseNormLayer, self).__init__()
         self.eps = 1e-8
 
     def forward(self, x):
@@ -97,9 +97,9 @@ class pixelwise_norm_layer(nn.Module):
 
 
 # for equaliaeed-learning rate.
-class equalized_conv2d(nn.Module):
+class EqualizedConv2d(nn.Module):
     def __init__(self, c_in, c_out, k_size, stride, pad, initializer='kaiming', bias=False):
-        super(equalized_conv2d, self).__init__()
+        super(EqualizedConv2d, self).__init__()
         self.conv = nn.Conv2d(c_in, c_out, k_size, stride, pad, bias=False)
         if initializer == 'kaiming':    kaiming_normal(self.conv.weight, a=calculate_gain('conv2d'))
         elif initializer == 'xavier':   xavier_normal(self.conv.weight)
@@ -114,9 +114,9 @@ class equalized_conv2d(nn.Module):
         return x + self.bias.view(1,-1,1,1).expand_as(x)
         
  
-class equalized_deconv2d(nn.Module):
+class EqualizedDeconv2d(nn.Module):
     def __init__(self, c_in, c_out, k_size, stride, pad, initializer='kaiming'):
-        super(equalized_deconv2d, self).__init__()
+        super(EqualizedDeconv2d, self).__init__()
         self.deconv = nn.ConvTranspose2d(c_in, c_out, k_size, stride, pad, bias=False)
         if initializer == 'kaiming':    kaiming_normal(self.deconv.weight, a=calculate_gain('conv2d'))
         elif initializer == 'xavier':   xavier_normal(self.deconv.weight)
@@ -130,9 +130,9 @@ class equalized_deconv2d(nn.Module):
         return x + self.bias.view(1,-1,1,1).expand_as(x)
 
 
-class equalized_linear(nn.Module):
+class EqualizedLinear(nn.Module):
     def __init__(self, c_in, c_out, initializer='kaiming'):
-        super(equalized_linear, self).__init__()
+        super(EqualizedLinear, self).__init__()
         self.linear = nn.Linear(c_in, c_out, bias=False)
         if initializer == 'kaiming':    kaiming_normal(self.linear.weight, a=calculate_gain('linear'))
         elif initializer == 'xavier':   torch.nn.init.xavier_normal(self.linear.weight)
@@ -148,9 +148,9 @@ class equalized_linear(nn.Module):
 
 
 # ref: https://github.com/github-pengge/PyTorch-progressive_growing_of_gans/blob/master/models/base_model.py
-class generalized_drop_out(nn.Module):
+class GeneralizedDropout(nn.Module):
     def __init__(self, mode='mul', strength=0.4, axes=(0,1), normalize=False):
-        super(generalized_drop_out, self).__init__()
+        super(GeneralizedDropout, self).__init__()
         self.mode = mode.lower()
         assert self.mode in ['mul', 'drop', 'prop'], 'Invalid GDropLayer mode'%mode
         self.strength = strength

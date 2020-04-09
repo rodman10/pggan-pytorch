@@ -5,11 +5,12 @@ import torchvision.models as models
 from torchvision import datasets
 import tensorflow as tf
 import os, sys
+import utils as utils
 
 
 class tf_recorder:
     def __init__(self):
-        mkdir('repo/tensorboard')
+        utils.mkdir('repo/tensorboard')
         self.writer = tf.summary.create_file_writer('repo/tensorboard')
                               
     def add_scalar(self, index, val, niter):
@@ -24,7 +25,7 @@ class tf_recorder:
                 self.writer.flush()
 
     def add_image_grid(self, index, ngrid, x, niter):
-        grid = make_image_grid(x, ngrid)
+        grid = utils.make_image_grid(x, ngrid)
         with self.writer.as_default():
             self.writer.add_image(name=index, data=grid, step=niter)
             self.writer.flush()

@@ -9,29 +9,29 @@ import copy
 
 # defined for code simplicity.
 def deconv(layers, c_in, c_out, k_size, stride=1, pad=0, leaky=True, bn=False, wn=False, pixel=False, only=False):
-    if wn:  layers.append(equalized_conv2d(c_in, c_out, k_size, stride, pad))
+    if wn:  layers.append(EqualizedConv2d(c_in, c_out, k_size, stride, pad))
     else:   layers.append(nn.Conv2d(c_in, c_out, k_size, stride, pad))
     if not only:
         if leaky:   layers.append(nn.LeakyReLU(0.2))
         else:       layers.append(nn.ReLU())
         if bn:      layers.append(nn.BatchNorm2d(c_out))
-        if pixel:   layers.append(pixelwise_norm_layer())
+        if pixel:   layers.append(PixelwiseNormLayer())
     return layers
 
 def conv(layers, c_in, c_out, k_size, stride=1, pad=0, leaky=True, bn=False, wn=False, pixel=False, gdrop=True, only=False):
-    if gdrop:       layers.append(generalized_drop_out(mode='prop', strength=0.0))
-    if wn:          layers.append(equalized_conv2d(c_in, c_out, k_size, stride, pad, initializer='kaiming'))
+    if gdrop:       layers.append(GeneralizedDropout(mode='prop', strength=0.0))
+    if wn:          layers.append(EqualizedConv2d(c_in, c_out, k_size, stride, pad, initializer='kaiming'))
     else:           layers.append(nn.Conv2d(c_in, c_out, k_size, stride, pad))
     if not only:
         if leaky:   layers.append(nn.LeakyReLU(0.2))
         else:       layers.append(nn.ReLU())
         if bn:      layers.append(nn.BatchNorm2d(c_out))
-        if pixel:   layers.append(pixelwise_norm_layer())
+        if pixel:   layers.append(PixelwiseNormLayer())
     return layers
 
 def linear(layers, c_in, c_out, sig=True, wn=False):
     layers.append(Flatten())
-    if wn:      layers.append(equalized_linear(c_in, c_out))
+    if wn:      layers.append(EqualizedLinear(c_in, c_out))
     else:       layers.append(Linear(c_in, c_out))
     if sig:     layers.append(nn.Sigmoid())
     return layers
@@ -54,7 +54,7 @@ def soft_copy_param(target_link, source_link, tau):
 
 def get_module_names(model):
     names = []
-    for key, val in model.state_dict().iteritems():
+    for key, val in model.state_dict().items():
         name = key.split('.')[0]
         if not name in names:
             names.append(name)
@@ -82,7 +82,7 @@ class Generator(nn.Module):
         layers = []
         ndim = self.ngf
         if self.flag_norm_latent:
-            layers.append(pixelwise_norm_layer())
+            layers.append(PixelwiseNormLayer())
         layers = deconv(layers, self.nz, ndim, 4, 1, 3, self.flag_leaky, self.flag_bn, self.flag_wn, self.flag_pixelwise)
         layers = deconv(layers, ndim, ndim, 3, 1, 1, self.flag_leaky, self.flag_bn, self.flag_wn, self.flag_pixelwise)
         return  nn.Sequential(*layers), ndim
@@ -145,7 +145,7 @@ class Generator(nn.Module):
             next_block.add_module('high_resl_to_rgb', self.to_rgb_block(ndim))
 
             new_model.add_module('concat_block', ConcatTable(prev_block, next_block))
-            new_model.add_module('fadein_block', fadein_layer(self.config))
+            new_model.add_module('fadein_block', FadeInLayer(self.config))
             self.model = None
             self.model = new_model
             self.module_names = get_module_names(self.model)
@@ -199,10 +199,10 @@ class Discriminator(nn.Module):
         self.model = self.get_init_dis()
 
     def last_block(self):
-        # add minibatch_std_concat_layer later.
+        # add MinibatchStdConcatLayer later.
         ndim = self.ndf
         layers = []
-        layers.append(minibatch_std_concat_layer())
+        layers.append(MinibatchStdConcatLayer())
         layers = conv(layers, ndim+1, ndim, 3, 1, 1, self.flag_leaky, self.flag_bn, self.flag_wn, pixel=False)
         layers = conv(layers, ndim, ndim, 4, 1, 0, self.flag_leaky, self.flag_bn, self.flag_wn, pixel=False)
         layers = linear(layers, ndim, 1, sig=self.flag_sigmoid, wn=self.flag_wn)
@@ -261,7 +261,7 @@ class Discriminator(nn.Module):
 
             new_model = nn.Sequential()
             new_model.add_module('concat_block', ConcatTable(prev_block, next_block))
-            new_model.add_module('fadein_block', fadein_layer(self.config))
+            new_model.add_module('fadein_block', FadeInLayer(self.config))
 
             # we make new network since pytorch does not support remove_module()
             names = get_module_names(self.model)

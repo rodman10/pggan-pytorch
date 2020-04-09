@@ -13,7 +13,7 @@ import utils as utils
 import numpy as np
 # import tensorflow as tf
 
-class trainer:
+class Trainer:
     def __init__(self, config):
         self.config = config
         if torch.cuda.is_available():
@@ -265,7 +265,7 @@ class trainer:
                 self.fx = self.D(self.x)
                 self.fx_tilde = self.D(self.x_tilde.detach())
                 
-		        loss_d = self.mse(self.fx.squeeze(), self.real_label) + \
+                loss_d = self.mse(self.fx.squeeze(), self.real_label) + \
                                   self.mse(self.fx_tilde, self.fake_label)
                 loss_d.backward()
                 self.opt_d.step()
@@ -296,8 +296,8 @@ class trainer:
                 if self.use_tb:
                     with torch.no_grad():
                         x_test = self.G(self.z_test)
-                    self.tb.add_scalar('data/loss_g', loss_g[0].item(), self.globalIter)
-                    self.tb.add_scalar('data/loss_d', loss_d[0].item(), self.globalIter)
+                    self.tb.add_scalar('data/loss_g', loss_g.item(), self.globalIter)
+                    self.tb.add_scalar('data/loss_d', loss_d.item(), self.globalIter)
                     self.tb.add_scalar('tick/lr', self.lr, self.globalIter)
                     self.tb.add_scalar('tick/cur_resl', int(pow(2,floor(self.resl))), self.globalIter)
                     '''IMAGE GRID
@@ -365,7 +365,7 @@ if __name__ == '__main__':
         print('  {}: {}'.format(k, v))
     print('-------------------------------------------------')
     torch.backends.cudnn.benchmark = True           # boost speed.
-    trainer = trainer(config)
+    trainer = Trainer(config)
     trainer.train()
 
 

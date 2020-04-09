@@ -6,7 +6,7 @@ import scipy.misc
 #import tensorflow as tf
 import torchvision
 import torchvision.transforms as transforms
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, Dataset, ConcatDataset
 from torchvision.datasets import ImageFolder
 from torch.autograd import Variable
 from matplotlib import pyplot as plt
@@ -26,12 +26,18 @@ class dataloader:
         
         self.batchsize = int(self.batch_table[pow(2,resl)])
         self.imsize = int(pow(2,resl))
-        self.dataset = ImageFolder(
-                    root=self.root,
-                    transform=transforms.Compose(   [
-                                                    transforms.Resize(size=(self.imsize,self.imsize), interpolation=Image.NEAREST),
-                                                    transforms.ToTensor(),
-                                                    ]))
+        transform = transforms.Compose([
+                      transforms.Grayscale(),
+                      transforms.Resize(size=(self.imsize,self.imsize), interpolation=Image.NEAREST),
+                      transforms.ToTensor(),
+                    ])
+        sup_dataset = ImageFolder(
+                    root='%s/supervisored'%self.root,
+                    transform=transform)
+        unsup_dataset = ImageFolder(
+                    root='%s/unsupervisored'%self.root,
+                    transform=transform)
+        self.dataset = ConcatDataset([sup_dataset, unsup_dataset])
 
         self.dataloader = DataLoader(
             dataset=self.dataset,
