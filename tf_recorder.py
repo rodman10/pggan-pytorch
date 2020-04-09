@@ -9,9 +9,9 @@ import utils as utils
 
 
 class tf_recorder:
-    def __init__(self):
-        utils.mkdir('repo/tensorboard')
-        self.writer = tf.summary.create_file_writer('repo/tensorboard')
+    def __init__(self, output_dir):
+        utils.mkdir('%s/tensorboard'%output_dir)
+        self.writer = tf.summary.create_file_writer('%s/tensorboard'%output_dir)
                               
     def add_scalar(self, index, val, niter):
         with self.writer.as_default():

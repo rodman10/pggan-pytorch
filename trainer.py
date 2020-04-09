@@ -11,6 +11,7 @@ from tqdm import tqdm
 import tf_recorder as tensorboard
 import utils as utils
 import numpy as np
+from reporter import *
 # import tensorflow as tf
 
 class Trainer:
@@ -75,7 +76,7 @@ class Trainer:
         # tensorboard
         self.use_tb = config.use_tb
         if self.use_tb:
-            self.tb = tensorboard.tf_recorder()
+            self.tb = tensorboard.tf_recorder(self.config.train_output_root)
         
 
     def resl_scheduler(self):
@@ -279,18 +280,19 @@ class Trainer:
                 # logging.
                 log_msg = ' [E:{0}][T:{1}][{2:6}/{3:6}]  errD: {4:.4f} | errG: {5:.4f} | [lr:{11:.5f}][cur:{6:.3f}][resl:{7:4}][{8}][{9:.1f}%][{10:.1f}%]'.format(self.epoch, self.globalTick, self.stack, len(self.loader.dataset), loss_d.item(), loss_g.item(), self.resl, int(pow(2,floor(self.resl))), self.phase, self.complete['gen'], self.complete['dis'], self.lr)
                 tqdm.write(log_msg)
-
+                report_progress(log_msg)
+                heartbeat()
                 # save model.
-                self.snapshot('repo/model')
+                self.snapshot('%s/model'%self.config.train_output_root)
 
                 # save image grid.
                 if self.globalIter%self.config.save_img_every == 0:
                     with torch.no_grad():
                         x_test = self.G(self.z_test)
-                    utils.mkdir('repo/save/grid')
-                    utils.save_image_grid(x_test.data, 'repo/save/grid/{}_{}_G{}_D{}.jpg'.format(int(self.globalIter/self.config.save_img_every), self.phase, self.complete['gen'], self.complete['dis']))
-                    utils.mkdir('repo/save/resl_{}'.format(int(floor(self.resl))))
-                    utils.save_image_single(x_test.data, 'repo/save/resl_{}/{}_{}_G{}_D{}.jpg'.format(int(floor(self.resl)),int(self.globalIter/self.config.save_img_every), self.phase, self.complete['gen'], self.complete['dis']))
+                    utils.mkdir('%s/save/grid'%self.config.train_output_root)
+                    utils.save_image_grid(x_test.data, '{}/save/grid/{}_{}_G{}_D{}.jpg'.format(self.config.train_output_root, int(self.globalIter/self.config.save_img_every), self.phase, self.complete['gen'], self.complete['dis']))
+                    utils.mkdir('%s/save/resl_%d'%(self.config.train_output_root, int(floor(self.resl))))
+                    utils.save_image_single(x_test.data, '{}/save/resl_{}/{}_{}_G{}_D{}.jpg'.format(self.config.train_output_root, int(floor(self.resl)),int(self.globalIter/self.config.save_img_every), self.phase, self.complete['gen'], self.complete['dis']))
 
                 # tensorboard visualization.
                 if self.use_tb:
@@ -305,6 +307,7 @@ class Trainer:
                     self.tb.add_image_grid('grid/x_tilde', 4, utils.adjust_dyn_range(self.x_tilde.data.float(), [-1,1], [0,1]), self.globalIter)
                     self.tb.add_image_grid('grid/x_intp', 4, utils.adjust_dyn_range(self.x.data.float(), [-1,1], [0,1]), self.globalIter)
                     '''
+        job_completed()
 
     def get_state(self, target):
         if target == 'gen':
@@ -365,7 +368,10 @@ if __name__ == '__main__':
         print('  {}: {}'.format(k, v))
     print('-------------------------------------------------')
     torch.backends.cudnn.benchmark = True           # boost speed.
-    trainer = Trainer(config)
-    trainer.train()
+    try:
+        trainer = Trainer(config)
+        trainer.train()
+    except Exception as e:
+        report_error(-1, e.message)
 
 
